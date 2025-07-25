@@ -1,7 +1,6 @@
-import chainlit as cl
+import streamlit as st
 from time import sleep
-
-from profiles import profiles  # yeh tumhara list of 20 profiles hai
+from profiles import profiles  # Yeh tumhara list of 20 profiles hai
 import requests
 
 # WhatsApp API config
@@ -17,32 +16,35 @@ def send_whatsapp(to, message):
     }
     try:
         res = requests.post(url, data=payload)
-        print(res.json())
+        st.write(res.json())
     except Exception as e:
-        print("❌", e)
+        st.error(f"❌ Error sending WhatsApp message: {e}")
 
-@cl.on_message
-async def main(message: cl.Message):
-    text = message.content.lower().strip()
+st.title("👵 Rishtay Wali Aunty App")
 
+user_input = st.text_input("Beta, kis gender ka rishta chahiye? (male/female/ladka/ladki)")
+
+if user_input:
+    text = user_input.lower().strip()
+    
     if "female" in text or "ladki" in text:
         gender = "female"
     elif "male" in text or "ladka" in text:
         gender = "male"
     else:
-        await cl.Message(content="Beta kis gender ka rishta chahiye? (male/female)").send()
-        return
+        st.warning("Beta kis gender ka rishta chahiye? (male/female)")
+        st.stop()
 
     matches = [p for p in profiles if p["gender"] == gender]
+    
     if not matches:
-        await cl.Message(content="Koi rishta nahi mila beta.").send()
-        return
+        st.info("Koi rishta nahi mila beta.")
+    else:
+        st.success(f"Aunty ke paas {len(matches)} rishtay hain:\n")
 
-    await cl.Message(content=f"👵 Aunty ke paas {len(matches)} rishtay hain:\n").send()
-
-    for p in matches:
-        line = f"{p['name']}, {p['age']} saal ka/ki, {p['profession']} from {p['city']}"
-        await cl.Message(content="👤 " + line).send()
-        # WhatsApp bhejna (optional — comment out if not working)
-        # send_whatsapp(p["whatsapp"], f"Aunty ka paigham:\n{line}")
-        sleep(0.5)
+        for p in matches:
+            line = f"{p['name']}, {p['age']} saal ka/ki, {p['profession']} from {p['city']}"
+            st.write("👤 " + line)
+            # WhatsApp bhejna (optional — uncomment to enable)
+            # send_whatsapp(p["whatsapp"], f"Aunty ka paigham:\n{line}")
+            sleep(0.5)
